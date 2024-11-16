@@ -1,6 +1,7 @@
 import re  # Import the regular expression module to parse the DOT string
 from heapq import heapify, heappop, heappush  # Import functions to work with a priority queue
 
+
 class Graph:
     def __init__(self):
         self.graph = {}  # Initialize an empty dictionary to store the graph
@@ -26,13 +27,27 @@ class Graph:
             # Add the edge to the graph
             self.add_edge(from_node, to_node, weight)
 
-    def dijkstra(self, source: str):
+    def dijkstra(self, source: str, target: str):
+
+        steps = []
+
         # Initialize the distances for all nodes as infinity
         distances = {node: float("inf") for node in self.graph}
+
+        #set the 0th step as initialization
+        steps.append((0,{node : float("inf") for node in self.graph}))
         distances[source] = 0  # Set the distance to the source node as 0
+
+        steps.append((1, {node: 0 if node == source else float("inf") for node in self.graph}))
+
         priority_queue = [(0, source)]  # Initialize the priority queue with the source node
         heapify(priority_queue)  # Heapify the priority queue to make it a valid min-heap
         visited = set()  # Set to track visited nodes
+
+
+
+       #implement a counter for each step / iteration
+       #log the values of each node and whether it has been visited or not
 
         # While the priority queue is not empty
         while priority_queue:
@@ -41,6 +56,7 @@ class Graph:
             if currentNode in visited:
                 continue  # Skip the node if it has already been visited
             visited.add(currentNode)  # Mark the node as visited
+
 
             # For each neighbor of the current node
             for neighbor, weight in self.graph[currentNode].items():
@@ -62,11 +78,11 @@ class Graph:
                 if distances[neighbor] == distance + weight:
                     predecessors[neighbor] = node  # Set the predecessor
 
-        return distances, predecessors  # Return both the distances and the predecessors
+        return distances, predecessors, steps   # Return both the distances and the predecessors
 
     def shortest_path(self, source: str, target: str):
         # Call dijkstra to get distances and predecessors from the source node
-        _, predecessors = self.dijkstra(source)
+        _, predecessors, _ = self.dijkstra(source, target)
         path = []  # Initialize an empty list to store the path
         current_node = target  # Start from the target node
 
@@ -78,8 +94,3 @@ class Graph:
         path.reverse()  # Reverse the path to get it from source to target
         return path  # Return the reversed path
 
-# Sample usage function
-def run(dot_string, _from, _to):
-    G = Graph()  # Create a new Graph object
-    G.from_dot_string(dot_string)  # Parse the DOT string and add edges to the graph
-    print((G.shortest_path(_from, _to)))  # Print the shortest path from _from to _to

@@ -1,5 +1,4 @@
 from visualization import visualize
-from dijkstra import run
 
 
 def main():
@@ -19,8 +18,7 @@ def main():
     }
     """
 
-    #run(graph_DOT, "B", "F")
-    visualize(graph_DOT, "B")
+    visualize(graph_DOT, "B", "F")
 
 
 if __name__ == '__main__':
