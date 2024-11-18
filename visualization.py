@@ -180,13 +180,11 @@ def renderGraph(graph, surface, font, screen, distances, source_node):
         screen.blit(NodeID, (x - scaled_radius / 2.4, y - scaled_radius / 2.2))
         # Render text (distance or label)
 
-
     # Render all nodes and edges
     for node_obj in node_objects.values():
         renderNode(node_obj)
     for arrow_obj in arrow_objects:
         arrow_obj.render(surface, font)
-
 
     return node_objects, arrow_objects
 
@@ -254,37 +252,21 @@ def visualize(graph, source_node, target_node):
     # Create a button at the bottom
     button_font = font
     # Create a button at the bottom of the screen
-    buttonPrev = Button(x=50, y=screen.get_height()-50, width=100, height=40, text="Previous Step", font=font, color=(0, 8, 8))
-    buttonNext = Button(x=screen.get_width() - 150, y=screen.get_height()-50, width=100, height=40, text="Next Step", font=font,
+    buttonPrev = Button(x=50, y=screen.get_height() - 50, width=100, height=40, text="Previous Step", font=font,
+                        color=(0, 8, 8))
+    buttonNext = Button(x=screen.get_width() - 150, y=screen.get_height() - 50, width=100, height=40, text="Next Step",
+                        font=font,
                         color=(0, 8, 8))
 
     # Snapshot management
-    snapshots = []
     current_snapshot_index = 0
 
-    # Function to take a snapshot of the current graph state
-    def take_snapshot(nodes, arrows):
-        state = State(nodes=list(nodes.values()), arrows=arrows[:])
-        snapshots.append(state)
-
-    # Function to render a snapshot
-    def render_snapshot(index):
-        if 0 <= index < len(snapshots):
-            state = snapshots[index]
-            screen.fill(0x606d5d)  # Clear screen
-
-            # Render all nodes in the snapshot
-            for node in state.nodes:
-                # Render node using its properties
-                pygame.draw.circle(screen, node.color or 0x88958d, (int(node.x), int(node.y)), int(node.radius * 1.3))
-                NodeID = font.render(f"{node.name}", False, 0xDDF2EB)
-                screen.blit(NodeID, (node.x - node.radius / 2.4, node.y - node.radius / 2.2))
-
-            # Render all arrows in the snapshot
-            for arrow in state.arrows:
-                arrow.render(screen, font)
-
-            pygame.display.update()
+    def render_snapshot():
+        if current_snapshot_index < len(steps):
+            # Get the current step
+            current_distances = steps[current_snapshot_index]
+            # Update table values to reflect the current distances
+            render_table(current_distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
 
     # Event loop for visualization
     while True:
@@ -300,22 +282,23 @@ def visualize(graph, source_node, target_node):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if buttonPrev.is_clicked(event.pos) and current_snapshot_index > 0:
                     current_snapshot_index -= 1
-                    render_snapshot(current_snapshot_index)
+                    render_snapshot()
                     print("previous button clicked")
-                if buttonNext.is_clicked(event.pos) and current_snapshot_index < len(snapshots) - 1:
+                else : print("no more previous events!")
+                if buttonNext.is_clicked(event.pos) and current_snapshot_index < len(steps) - 1:
                     current_snapshot_index += 1
-                    render_snapshot(current_snapshot_index)
+                    render_snapshot()
                     print("next button clicked")
+                else : print("no more upcoming events!")
 
 
 
         # Render the graph and capture state at initialization
         nodes, arrows = renderGraph(data, screen, font, screen, distances, source_node)
 
-        #render table of nodes and its values :
+        # render table of nodes and its values :
         render_table(distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
-
-        take_snapshot(nodes, arrows)  # Save the current state
+        render_snapshot()
         currentIndexSurface = font.render("current step: " + str(current_snapshot_index), False, 0xDDF2EB)
         screen.blit(currentIndexSurface, (screen.get_width() / 2 - buttonPrev.width / 2, buttonPrev.y))
         # Render the buttons

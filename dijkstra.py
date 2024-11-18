@@ -35,10 +35,10 @@ class Graph:
         distances = {node: float("inf") for node in self.graph}
 
         #set the 0th step as initialization
-        steps.append((0,{node : float("inf") for node in self.graph}))
+        steps.append(({node : float("inf") for node in self.graph}))
         distances[source] = 0  # Set the distance to the source node as 0
 
-        steps.append((1, {node: 0 if node == source else float("inf") for node in self.graph}))
+        steps.append({source : 0})
 
         priority_queue = [(0, source)]  # Initialize the priority queue with the source node
         heapify(priority_queue)  # Heapify the priority queue to make it a valid min-heap
@@ -57,14 +57,21 @@ class Graph:
                 continue  # Skip the node if it has already been visited
             visited.add(currentNode)  # Mark the node as visited
 
-
             # For each neighbor of the current node
             for neighbor, weight in self.graph[currentNode].items():
                 # Calculate the temporary distance to the neighbor
                 temporary_distance = currentDist + weight
+
                 # If the new distance is shorter than the existing distance, update it
                 if temporary_distance < distances[neighbor]:
+                    # Update the distance for the neighbor
                     distances[neighbor] = temporary_distance
+
+                    # Create a new snapshot for the current step
+                    new_step = steps[-1].copy()  # Copy the previous step
+                    new_step[neighbor] = temporary_distance  # Update the modified variable (neighbor's distance)
+                    steps.append(new_step)  # Append the new step
+
                     # Push the neighbor into the priority queue with the updated distance
                     heappush(priority_queue, (temporary_distance, neighbor))
 
