@@ -4,14 +4,6 @@ from dijkstra import re
 from dijkstra import Graph
 
 
-# class which serves as a way to save "snapshots" of the current state
-class State:
-    # constructor with a list of nodes and arrows
-    def __init__(self, nodes, arrows):
-        self.nodes = nodes
-        self.arrows = arrows
-
-
 class Object:
     def __init__(self, x, y, name, type='node', color=None, text=None, textPos=None, font="Arial", radius=None,
                  center=None, weight=None, visited=False):
@@ -32,7 +24,7 @@ class Object:
 class Arrow(Object):
     def __init__(self, start_node, end_node, weight, start_pos, end_pos, name=""):
         super().__init__(x=(start_pos[0] + end_pos[0]) / 2, y=(start_pos[1] + end_pos[1]) / 2, name=name, type='edge',
-                         weight=weight)
+                         weight=weight, color=(0,0,0))
         self.start_node = start_node
         self.end_node = end_node
         self.start_pos = start_pos
@@ -166,6 +158,7 @@ def renderGraph(graph, surface, font, screen, distances, source_node):
             start_pos=node_positions[nodeA],
             end_pos=node_positions[nodeB],
             name=f"{nodeA}-{nodeB}"
+
         )
         for nodeA, nodeB, weight in edges
     ]
@@ -230,6 +223,71 @@ def render_table(distances, nodes, surface, font, screen, table_background_color
         row += 1  # Move to the next row
 
 
+def render_shortest_path(data,graph, source, target, background_color, screen, font, distances):
+    """
+    Renders the shortest path on the screen, using `Node` and `Arrow` for visual representation.
+
+    Parameters:
+        - graph: The Graph object containing the adjacency list.
+        - source: The source node for the shortest path.
+        - target: The target node for the shortest path.
+        - background_color: The color of the screen background.
+        - screen: The Pygame screen to render on.
+        - font: The Pygame font for rendering text.
+        - distances: A dictionary of distances for all nodes from the source.
+    """
+    # Get the shortest path
+    shortest_path_nodes = graph.shortest_path(source, target)
+
+    if not shortest_path_nodes or len(shortest_path_nodes) == 1:
+        print(f"No path found from {source} to {target}.")
+        return
+
+    # Construct edges for the shortest path
+    shortest_path_edges = [
+        (shortest_path_nodes[i], shortest_path_nodes[i + 1])
+        for i in range(len(shortest_path_nodes) - 1)
+    ]
+
+    # Clear the screen with the background color
+    screen.fill(background_color)
+
+    # Render the full graph
+    nodes, arrows = renderGraph(data, screen, font, screen, source_node=None, distances=distances)
+
+    # Dim the entire graph
+    for arrow in arrows:
+        pygame.draw.line(screen, (100, 100, 100), arrow.start_pos, arrow.end_pos, 1)
+
+    for node in nodes.values():
+        pygame.draw.circle(screen, (100, 100, 100), (int(node.x), int(node.y)), node.radius)
+
+    # Highlight the shortest path edges
+    for edge in shortest_path_edges:
+        nodeA, nodeB = edge
+        start_node = nodes[nodeA]
+        end_node = nodes[nodeB]
+
+        # Draw the edge for the shortest path
+        pygame.draw.line(screen, (255, 0, 0), (start_node.x, start_node.y), (end_node.x, end_node.y), 3)
+
+        # Draw the edge weight at the midpoint
+        weight = graph.graph[nodeA][nodeB]
+        mid_x = (start_node.x + end_node.x) / 2
+        mid_y = (start_node.y + end_node.y) / 2
+        weight_text = font.render(f"{weight}", False, (255, 255, 255))
+        screen.blit(weight_text, (mid_x - weight_text.get_width() // 2, mid_y - weight_text.get_height() // 2))
+
+    # Highlight the shortest path nodes
+    for node_name in shortest_path_nodes:
+        node = nodes[node_name]
+        pygame.draw.circle(screen, (0, 255, 0), (int(node.x), int(node.y)), node.radius)
+
+        # Render node labels
+        label = font.render(node.name, False, (255, 255, 255))
+        screen.blit(label, (node.x + 10 - node.radius, node.y + 10 - node.radius * 1.5))
+
+
 def visualize(graph, source_node, target_node):
     pygame.init()
     screen = pygame.display.set_mode((1200, 800))
@@ -246,6 +304,7 @@ def visualize(graph, source_node, target_node):
     for nodeA, nodeB, weight in data:
         g.add_edge(nodeA, nodeB, weight)
 
+
     # Get distances using the Dijkstra algorithm
     distances, _, steps = g.dijkstra(source_node, target_node)
 
@@ -257,7 +316,7 @@ def visualize(graph, source_node, target_node):
     buttonNext = Button(x=screen.get_width() - 150, y=screen.get_height() - 50, width=100, height=40, text="Next Step",
                         font=font,
                         color=(0, 8, 8))
-
+    buttonSP = Button(x=10, y=10, width=100, height=40, text="Shortest Path", font=button_font, color=(0, 8, 8))
     # Snapshot management
     current_snapshot_index = 0
 
@@ -267,6 +326,9 @@ def visualize(graph, source_node, target_node):
             current_distances = steps[current_snapshot_index]
             # Update table values to reflect the current distances
             render_table(current_distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
+            """TODO With each step color the node that is inserted into the visited queue and color its respective edges"""
+
+    renderSP = False
 
     # Event loop for visualization
     while True:
@@ -284,26 +346,31 @@ def visualize(graph, source_node, target_node):
                     current_snapshot_index -= 1
                     render_snapshot()
                     print("previous button clicked")
-                else : print("no more previous events!")
+                elif buttonPrev.is_clicked(event.pos) and current_snapshot_index == 0 : print("no more previous events!")
                 if buttonNext.is_clicked(event.pos) and current_snapshot_index < len(steps) - 1:
                     current_snapshot_index += 1
                     render_snapshot()
                     print("next button clicked")
-                else : print("no more upcoming events!")
+                elif buttonPrev.is_clicked(event.pos) and current_snapshot_index == len(steps)-1 : print("no more upcoming events!")
+                if buttonSP.is_clicked(event.pos):
+                    print("showing shortest path")
+                    renderSP = not renderSP
+
 
 
 
         # Render the graph and capture state at initialization
         nodes, arrows = renderGraph(data, screen, font, screen, distances, source_node)
+        if renderSP:
+            render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances)
 
-        # render table of nodes and its values :
-        render_table(distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
         render_snapshot()
         currentIndexSurface = font.render("current step: " + str(current_snapshot_index), False, 0xDDF2EB)
         screen.blit(currentIndexSurface, (screen.get_width() / 2 - buttonPrev.width / 2, buttonPrev.y))
         # Render the buttons
         buttonPrev.render(screen)
         buttonNext.render(screen)
+        buttonSP.render(screen)
 
         pygame.display.flip()
         pygame.display.update()
