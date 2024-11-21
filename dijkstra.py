@@ -38,6 +38,8 @@ class Graph:
         steps.append(({node : float("inf") for node in self.graph}))
         distances[source] = 0  # Set the distance to the source node as 0
 
+
+        #set the value of source node to 0
         steps.append({source : 0})
 
         priority_queue = [(0, source)]  # Initialize the priority queue with the source node
