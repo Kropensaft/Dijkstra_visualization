@@ -10,16 +10,13 @@ class Graph:
         # If the 'from_' node is not in the graph, add it with an empty dictionary
         if from_ not in self.graph:
             self.graph[from_] = {}
-        # If the 'to_' node is not in the graph, add it with an empty dictionary
-        if to_ not in self.graph:
-            self.graph[to_] = {}
-        # Add the edge between 'from_' and 'to_' with the specified 'weight'
+        # Add the edge from 'from_' to 'to_' with the specified 'weight'
         self.graph[from_][to_] = weight
-        self.graph[to_][from_] = weight  # Since the graph is undirected, add the reverse edge too
+        # No reverse edge is added because the graph is directed
 
     def from_dot_string(self, dot_string):
         # Define a regular expression to match the DOT format for edges with weights
-        edge_pattern = re.compile(r'(\w+)\s*--\s*(\w+)\s*\[weight=(\d+(\.\d+)?)\];')
+        edge_pattern = re.compile(r'(\w+)\s*->\s*(\w+)\s*\[weight=(\d+(\.\d+)?)\];')
         # Loop through all matches of the regex in the DOT string
         for match in edge_pattern.finditer(dot_string):
             # Extract the 'from_node', 'to_node', and 'weight' from the match
@@ -28,26 +25,21 @@ class Graph:
             self.add_edge(from_node, to_node, weight)
 
     def dijkstra(self, source: str, target: str):
-
         steps = []
 
         # Initialize the distances for all nodes as infinity
         distances = {node: float("inf") for node in self.graph}
 
-        #set the 0th step as initialization
-        steps.append(({node : float("inf") for node in self.graph}))
+        # Set the 0th step as initialization
+        steps.append({node: float("inf") for node in self.graph})
         distances[source] = 0  # Set the distance to the source node as 0
 
-        steps.append({source : 0})
+        # Set the value of source node to 0
+        steps.append({source: 0})
 
         priority_queue = [(0, source)]  # Initialize the priority queue with the source node
         heapify(priority_queue)  # Heapify the priority queue to make it a valid min-heap
         visited = set()  # Set to track visited nodes
-
-
-
-       #implement a counter for each step / iteration
-       #log the values of each node and whether it has been visited or not
 
         # While the priority queue is not empty
         while priority_queue:
@@ -85,7 +77,7 @@ class Graph:
                 if distances[neighbor] == distance + weight:
                     predecessors[neighbor] = node  # Set the predecessor
 
-        return distances, predecessors, steps   # Return both the distances and the predecessors
+        return distances, predecessors, steps  # Return both the distances and the predecessors
 
     def shortest_path(self, source: str, target: str):
         # Call dijkstra to get distances and predecessors from the source node
@@ -99,5 +91,5 @@ class Graph:
             current_node = predecessors[current_node]  # Move to the predecessor node
 
         path.reverse()  # Reverse the path to get it from source to target
-        return path  # Return the reversed path
 
+        return path  # Return the reversed path

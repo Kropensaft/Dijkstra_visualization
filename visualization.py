@@ -1,15 +1,13 @@
+import os
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import math
+import numpy as np
+import scipy
+import networkx as nx
 from dijkstra import re
 from dijkstra import Graph
-
-
-# class which serves as a way to save "snapshots" of the current state
-class State:
-    # constructor with a list of nodes and arrows
-    def __init__(self, nodes, arrows):
-        self.nodes = nodes
-        self.arrows = arrows
 
 
 class Object:
@@ -30,10 +28,11 @@ class Object:
 
 
 class Arrow(Object):
-    def __init__(self, start_node, end_node, weight, start_pos, end_pos, name=""):
+    def __init__(self, start_node, end_node, weight, start_pos, end_pos, name="", color=(255, 255, 255)):
         super().__init__(x=(start_pos[0] + end_pos[0]) / 2, y=(start_pos[1] + end_pos[1]) / 2, name=name, type='edge',
-                         weight=weight)
+                         weight=weight, color=(0, 0, 0))
         self.start_node = start_node
+        self.color = color
         self.end_node = end_node
         self.start_pos = start_pos
         self.end_pos = end_pos
@@ -41,7 +40,7 @@ class Arrow(Object):
         self.shaft_length = math.sqrt(
             (end_pos[0] - start_pos[0]) ** 2 + (end_pos[1] - start_pos[1]) ** 2) - self.arrow_size
 
-    def render(self, surface, font):
+    def render(self, surface, font, background_color, color):
         # Calculate the angle between the nodes
         angle = math.atan2(self.end_pos[1] - self.start_pos[1], self.end_pos[0] - self.start_pos[0])
 
@@ -54,7 +53,7 @@ class Arrow(Object):
         arrow_end_y = self.end_pos[1] - 13 * math.sin(angle)
 
         # Draw the arrow shaft (line) from the adjusted start position to the adjusted end position
-        pygame.draw.line(surface, (0xFFFFFF), (arrow_start_x, arrow_start_y), (arrow_end_x, arrow_end_y), 2)
+        pygame.draw.line(surface, (color), (arrow_start_x, arrow_start_y), (arrow_end_x, arrow_end_y), 2)
 
         # Draw the arrowhead (triangle) pointing towards the end node
         arrow_x1 = arrow_end_x - self.arrow_size * math.cos(angle - math.pi / 6)
@@ -62,13 +61,15 @@ class Arrow(Object):
         arrow_x2 = arrow_end_x - self.arrow_size * math.cos(angle + math.pi / 6)
         arrow_y2 = arrow_end_y - self.arrow_size * math.sin(angle + math.pi / 6)
 
-        pygame.draw.polygon(surface, (0xFFFFFF),
+        pygame.draw.polygon(surface, (color),
                             [(arrow_end_x, arrow_end_y), (arrow_x1, arrow_y1), (arrow_x2, arrow_y2)])
 
         # Render and rotate the text to match the angle of the arrow
-        text = font.render(f"{self.weight}", False, 0xDDF2EB)
-
         # Position the rotated text at the end of the arrow
+        edge_weight_font = pygame.font.SysFont("San Serif", 16)
+
+        text = edge_weight_font.render(f"{self.weight}", False, (0, 221, 242))
+
         mid_x, mid_y = (arrow_start_x + arrow_end_x) / 2, (arrow_start_y + arrow_end_y) / 2
         surface.blit(text,
                      ((mid_x + 5) - text.get_width() / 2, (mid_y + 5) - text.get_height() / 2))
@@ -115,32 +116,38 @@ def parseInput(input_string):
     return edges
 
 
-def renderGraph(graph, surface, font, screen, distances, source_node):
-    node_positions = {}
+def renderGraph(graph, surface, font, screen, distances, source_node, opacity=255):
     nodes = set()
     edges = []
 
-    # Function to assign positions in a circular layout
-    def assign_positions(nodes, radius, center_x, center_y):
-        angle_step = (2 * math.pi / len(nodes)) if nodes else 0
-        for idx, node in enumerate(nodes):
-            angle = idx * angle_step
-            x = center_x + radius * math.cos(angle)
-            y = center_y + radius * math.sin(angle)
-            node_positions[node] = (x, y)
+    # Use NetworkX to calculate node positions (X, Y)
+    nx_graph = nx.DiGraph()  # Directed graph
+    for from_node, to_node, weight in graph:
+        nx_graph.add_edge(from_node, to_node, weight=weight)
+
+    # Use a NetworkX layout (spring layout in this case)
+    node_positions = nx.spectral_layout(nx_graph)
+
+    center_x, center_y = surface.get_width() / 2.7, surface.get_height() / 2.2
+
+    # Scale the node positions (optional, to fit in Pygame window)
+    scale_factor = 300  # Scale factor to adjust the layout to the Pygame window size
+    node_positions = {node: (pos[0] * scale_factor + center_x, pos[1] * scale_factor + center_y)
+                      for node, pos in node_positions.items()}
 
     # Determine the size of the circle (based on the number of nodes)
     radius = min(surface.get_width(), surface.get_height()) / 3
-    center_x, center_y = surface.get_width() / 2.7, surface.get_height() / 2.4
+    center_x, center_y = surface.get_width() / 2.7, surface.get_height() / 3
 
     # Collect unique nodes and edges
     for A, B, weight in graph:
-        nodes.add(A)
-        nodes.add(B)
-        edges.append((A, B, weight))
+        if A is not B:  # Due to the existence of nodes without outgoing edges we need to check in order not to render its edges and to add it twice
+            nodes.add(A)
+            nodes.add(B)
+            edges.append((A, B, weight))
 
     # Assign positions for all nodes
-    assign_positions(nodes, radius, center_x, center_y)
+    # assign_positions(nodes, radius, center_x, center_y)
 
     # Create node objects
     node_objects = {
@@ -166,6 +173,7 @@ def renderGraph(graph, surface, font, screen, distances, source_node):
             start_pos=node_positions[nodeA],
             end_pos=node_positions[nodeB],
             name=f"{nodeA}-{nodeB}"
+
         )
         for nodeA, nodeB, weight in edges
     ]
@@ -174,7 +182,7 @@ def renderGraph(graph, surface, font, screen, distances, source_node):
         x, y = node_obj.x, node_obj.y
         node_radius = node_obj.radius
         scaled_radius = int(node_radius * 1.3)  # Scale up by 30%
-        pygame.draw.circle(surface, 0x88958d, (int(x), int(y)), scaled_radius)
+        pygame.draw.circle(surface, (136, 149, 141, opacity), (int(x), int(y)), scaled_radius)
         # Render node ID
         NodeID = font.render(f"{node_obj.name}", False, 0x606d5d)
         screen.blit(NodeID, (x - scaled_radius / 2.4, y - scaled_radius / 2.2))
@@ -184,7 +192,7 @@ def renderGraph(graph, surface, font, screen, distances, source_node):
     for node_obj in node_objects.values():
         renderNode(node_obj)
     for arrow_obj in arrow_objects:
-        arrow_obj.render(surface, font)
+        arrow_obj.render(surface, font, opacity, color=(255, 255, 255))
 
     return node_objects, arrow_objects
 
@@ -230,9 +238,53 @@ def render_table(distances, nodes, surface, font, screen, table_background_color
         row += 1  # Move to the next row
 
 
+def render_shortest_path(data, graph, source, target, background_color, screen, font, distances):
+    # Get the shortest path
+    shortest_path_nodes = graph.shortest_path(source, target)
+
+    if not shortest_path_nodes or len(shortest_path_nodes) == 1:
+        print(f"No path found from {source} to {target}.")
+        return
+
+    # Construct edges for the shortest path
+    shortest_path_edges = [
+        (shortest_path_nodes[i], shortest_path_nodes[i + 1])
+        for i in range(len(shortest_path_nodes) - 1)
+    ]
+
+    # Render the full graph, dimmed (no weights visible)
+    nodes, arrows = renderGraph(data, screen, font, screen, distances, source, opacity=0)
+
+    # Dim the entire graph
+    for arrow in arrows:
+        arrow.render(screen, font, background_color, color=(128, 128, 128, 128))
+
+    for node in nodes.values():
+        pygame.draw.circle(screen, (100, 100, 100), (int(node.x), int(node.y)), node.radius)
+
+    # Highlight the shortest path edges
+    for edge in shortest_path_edges:
+        nodeA, nodeB = edge
+
+        # Find the corresponding arrow object
+        for arrow in arrows:
+            if arrow.start_node == nodeA and arrow.end_node == nodeB:
+                arrow.render(screen, font, background_color, color=(255, 0, 0))  # Red for shortest path
+                break
+
+    # Highlight the shortest path nodes
+    for node_name in shortest_path_nodes:
+        node = nodes[node_name]
+        pygame.draw.circle(screen, (0, 255, 0), (int(node.x), int(node.y)), node.radius)
+
+        # Render node labels
+        label = font.render(node.name, False, (255, 0, 0))
+        screen.blit(label, (node.x + 10 - node.radius, node.y + 10 - node.radius * 1.5))
+
+
 def visualize(graph, source_node, target_node):
     pygame.init()
-    screen = pygame.display.set_mode((1200, 800))
+    screen = pygame.display.set_mode((1200, 800), pygame.SRCALPHA)
     _clock = pygame.time.Clock()
 
     title = "Visualization of Dijkstra's algorithm"
@@ -257,7 +309,7 @@ def visualize(graph, source_node, target_node):
     buttonNext = Button(x=screen.get_width() - 150, y=screen.get_height() - 50, width=100, height=40, text="Next Step",
                         font=font,
                         color=(0, 8, 8))
-
+    buttonSP = Button(x=10, y=10, width=100, height=40, text="Shortest Path", font=button_font, color=(0, 8, 8))
     # Snapshot management
     current_snapshot_index = 0
 
@@ -267,6 +319,9 @@ def visualize(graph, source_node, target_node):
             current_distances = steps[current_snapshot_index]
             # Update table values to reflect the current distances
             render_table(current_distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
+            """TODO With each step color the node that is inserted into the visited queue and color its respective edges"""
+
+    renderSP = False
 
     # Event loop for visualization
     while True:
@@ -284,26 +339,30 @@ def visualize(graph, source_node, target_node):
                     current_snapshot_index -= 1
                     render_snapshot()
                     print("previous button clicked")
-                else : print("no more previous events!")
+                elif buttonPrev.is_clicked(event.pos) and current_snapshot_index == 0:
+                    print("no more previous events!")
                 if buttonNext.is_clicked(event.pos) and current_snapshot_index < len(steps) - 1:
                     current_snapshot_index += 1
                     render_snapshot()
                     print("next button clicked")
-                else : print("no more upcoming events!")
-
-
+                elif buttonNext.is_clicked(event.pos) and current_snapshot_index == len(steps) - 1:
+                    print("no more upcoming events!"); renderSP = not renderSP
+                if buttonSP.is_clicked(event.pos):
+                    print("Shortest Path button clicked!")
+                    renderSP = not renderSP
 
         # Render the graph and capture state at initialization
         nodes, arrows = renderGraph(data, screen, font, screen, distances, source_node)
+        if renderSP:
+            render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances)
 
-        # render table of nodes and its values :
-        render_table(distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
         render_snapshot()
         currentIndexSurface = font.render("current step: " + str(current_snapshot_index), False, 0xDDF2EB)
         screen.blit(currentIndexSurface, (screen.get_width() / 2 - buttonPrev.width / 2, buttonPrev.y))
         # Render the buttons
         buttonPrev.render(screen)
         buttonNext.render(screen)
+        buttonSP.render(screen)
 
         pygame.display.flip()
         pygame.display.update()
