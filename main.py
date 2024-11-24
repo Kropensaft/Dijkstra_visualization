@@ -2,11 +2,9 @@ from visualization import visualize
 import os
 
 
-
-def main():
-
+def parseInput():
     from_file = input("read from file y/n? ")
-
+    from_file = from_file.strip().lower()
 
     if from_file == "y":
         # Define the graph file path
@@ -27,10 +25,16 @@ def main():
             # Call the visualization function
             visualize(graph_DOT, f"{source}", f"{target}")
         except Exception as e:
-            print(f"Node doesnt exist: {e} !")
-    else :
-        print("Input invalid, proceeding with default graph!")
-        graph_DOT = """
+            print(f"Node {e} doesn't exist in submitted graph!")
+    else:
+        if from_file != "n":
+            print("Input invalid, proceeding with default graph!")
+
+
+def main():
+   # parseInput()
+
+    graph_DOT = """
            graph G {
              A -- B [weight=3];
              B -- D [weight=3.5];
@@ -42,9 +46,11 @@ def main():
              D -- G [weight=10];
              E -- G [weight=7];
              F -- G [weight=2.5];
-             G -- G [weight=2]
+             G -- G [weight=0]
            }
            """
-        visualize(graph_DOT,"B", "F")
+    visualize(graph_DOT, "B", "F")
+
+
 if __name__ == '__main__':
     main()

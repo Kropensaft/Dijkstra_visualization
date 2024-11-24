@@ -1,14 +1,25 @@
 import os
 
+from networkx.classes import nodes
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
+from pygame.rect import Rect
+# PyGame ⬆
+
 import math
 import numpy as np
-import scipy
 import networkx as nx
+# networkX ⬆
+
 from dijkstra import re
 from dijkstra import Graph
+# functions from dijkstra header ⬆
 
+import pygame_gui
+from pygame_gui.windows.ui_file_dialog import UIFileDialog
+from pygame_gui.windows.ui_file_dialog import UIButton
+# UI elements and file systems ⬆
 
 class Object:
     def __init__(self, x, y, name, type='node', color=None, text=None, textPos=None, font="Arial", radius=None,
@@ -66,7 +77,7 @@ class Arrow(Object):
 
         # Render and rotate the text to match the angle of the arrow
         # Position the rotated text at the end of the arrow
-        edge_weight_font = pygame.font.SysFont("San Serif", 16)
+        edge_weight_font = pygame.font.SysFont("serif", 12)
 
         text = edge_weight_font.render(f"{self.weight}", False, (0, 221, 242))
 
@@ -75,29 +86,29 @@ class Arrow(Object):
                      ((mid_x + 5) - text.get_width() / 2, (mid_y + 5) - text.get_height() / 2))
 
 
-class Button:
-    def __init__(self, x, y, width, height, text, font, color, action=None):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.text = text
-        self.font = font
-        self.color = color
-        self.action = action
-
-    def render(self, surface):
-        # Draw the button
-        pygame.draw.rect(surface, self.color, (self.x, self.y, self.width, self.height))
-        # Draw the text on the button
-        text_surf = self.font.render(self.text, False, (0xFFFFFF))
-        surface.blit(text_surf, (
-            self.x + (self.width - text_surf.get_width()) / 2, self.y + (self.height - text_surf.get_height()) / 2))
-
-    def is_clicked(self, pos):
-        # Check if the button was clicked
-        x, y = pos
-        return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
+# class Button:
+#     def __init__(self, x, y, width, height, text, font, color, action=None):
+#         self.x = x
+#         self.y = y
+#         self.width = width
+#         self.height = height
+#         self.text = text
+#         self.font = font
+#         self.color = color
+#         self.action = action
+#
+#     def render(self, surface):
+#         # Draw the button
+#         pygame.draw.rect(surface, self.color, (self.x, self.y, self.width, self.height))
+#         # Draw the text on the button
+#         text_surf = self.font.render(self.text, False, (0xFFFFFF))
+#         surface.blit(text_surf, (
+#             self.x + (self.width - text_surf.get_width()) / 2, self.y + (self.height - text_surf.get_height()) / 2))
+#
+#     def is_clicked(self, pos):
+#         # Check if the button was clicked
+#         x, y = pos
+#         return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
 
 
 # Function to reParse the DOT graph input in order to visualize the graph
@@ -211,7 +222,7 @@ def render_table(distances, nodes, surface, font, screen, table_background_color
 
     # Loop through each node and draw the table cells
     row = 0  # Row index to go through each node
-    for node_name, node_obj in nodes.items():
+    for node_name, node_obj in sorted(nodes.items()):
         for col in range(num_cols):
             x = table_x + col * cell_width
             y = table_y + row * cell_height
@@ -282,10 +293,23 @@ def render_shortest_path(data, graph, source, target, background_color, screen, 
         screen.blit(label, (node.x + 10 - node.radius, node.y + 10 - node.radius * 1.5))
 
 
+# Function to create a Pygame_GUI button
+def create_gui_button(manager, text, x, y, width, height):
+    return pygame_gui.elements.UIButton(
+        relative_rect=Rect((x, y), (width, height)),
+        text=text,
+        manager=manager,
+    )
+
+
 def visualize(graph, source_node, target_node):
     pygame.init()
     screen = pygame.display.set_mode((1200, 800), pygame.SRCALPHA)
     _clock = pygame.time.Clock()
+
+    sourceSelect, targetSelect = "A", "B"
+    nodesForSelection = []
+    manager = pygame_gui.UIManager((1200, 800))
 
     title = "Visualization of Dijkstra's algorithm"
     pygame.display.set_caption(title)
@@ -297,23 +321,41 @@ def visualize(graph, source_node, target_node):
     g = Graph()
     for nodeA, nodeB, weight in data:
         g.add_edge(nodeA, nodeB, weight)
+        if nodeA not in nodesForSelection:
+            nodesForSelection.append(nodeA)
+        elif nodeB not in nodesForSelection:
+            nodesForSelection.append(nodeB)
+
 
     # Get distances using the Dijkstra algorithm
     distances, _, steps = g.dijkstra(source_node, target_node)
+    screenWidth, screenHeight = screen.get_width(), screen.get_height()
 
-    # Create a button at the bottom
-    button_font = font
-    # Create a button at the bottom of the screen
-    buttonPrev = Button(x=50, y=screen.get_height() - 50, width=100, height=40, text="Previous Step", font=font,
-                        color=(0, 8, 8))
-    buttonNext = Button(x=screen.get_width() - 150, y=screen.get_height() - 50, width=100, height=40, text="Next Step",
-                        font=font,
-                        color=(0, 8, 8))
-    buttonSP = Button(x=10, y=10, width=100, height=40, text="Shortest Path", font=button_font, color=(0, 8, 8))
+    buttonPrev = create_gui_button(manager=manager, x=100, y=screenHeight - 60, width=100, height=40,
+                                   text="Previous Step")
+
+    buttonNext = create_gui_button(manager=manager, x=screenWidth - 150, y=screenHeight - 60, width=100,
+                                   height=40, text="Next Step")
+
+    buttonSP = create_gui_button(manager=manager, x=10, y=10, width=100, height=40,
+                                 text="Shortest Path")
+
+    buttonLoadGraph = create_gui_button(manager=manager, x=10, y=60, width=100, height=40,
+                                        text="Load Graph")
+
+    #Dropdown menus to select source and target nodes
+    sourceDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, sourceSelect, (10, 110, 50, 40))
+
+    #source label
+    sourceLabel = font.render("Source Node", False, (150,151,151))
+
+    targetDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, targetSelect, (10, 160, 50, 40))
+    targetLabel = font.render("Target Node", False, (150,151,151))
+
     # Snapshot management
     current_snapshot_index = 0
 
-    def render_snapshot():
+    def render_snapshot(queue=None):
         if current_snapshot_index < len(steps):
             # Get the current step
             current_distances = steps[current_snapshot_index]
@@ -321,12 +363,18 @@ def visualize(graph, source_node, target_node):
             render_table(current_distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
             """TODO With each step color the node that is inserted into the visited queue and color its respective edges"""
 
+
+    file_dialog = None
     renderSP = False
+
+
 
     # Event loop for visualization
     while True:
+        time_delta = _clock.tick(60) / 1000.0
         screen.fill(0x606d5d)
         for event in pygame.event.get():
+            manager.process_events(event)
             if event.type == pygame.QUIT:
                 pygame.quit()
                 raise SystemExit(0)
@@ -334,35 +382,80 @@ def visualize(graph, source_node, target_node):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     raise SystemExit(0)
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if buttonPrev.is_clicked(event.pos) and current_snapshot_index > 0:
-                    current_snapshot_index -= 1
-                    render_snapshot()
-                    print("previous button clicked")
-                elif buttonPrev.is_clicked(event.pos) and current_snapshot_index == 0:
-                    print("no more previous events!")
-                if buttonNext.is_clicked(event.pos) and current_snapshot_index < len(steps) - 1:
-                    current_snapshot_index += 1
-                    render_snapshot()
-                    print("next button clicked")
-                elif buttonNext.is_clicked(event.pos) and current_snapshot_index == len(steps) - 1:
-                    print("no more upcoming events!"); renderSP = not renderSP
-                if buttonSP.is_clicked(event.pos):
-                    print("Shortest Path button clicked!")
+
+            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                # Previous button
+                if event.ui_element == buttonPrev:
+                    if current_snapshot_index != 0:
+                        current_snapshot_index -= 1
+                        render_snapshot()
+                        print("previous button clicked")
+
+                    if current_snapshot_index == 0:
+                        print("no more previous events")
+
+                # Next button
+                if event.ui_element == buttonNext:
+                    if current_snapshot_index < len(steps) - 1:
+                        current_snapshot_index += 1
+                        render_snapshot()
+                        print("next button clicked")
+
+                    if current_snapshot_index == len(steps) - 1:
+                        print("no more upcoming events")
+                        renderSP = not renderSP
+
+                # Shortest path button
+                if event.ui_element == buttonSP:
+                    print("Shortest path button clicked")
                     renderSP = not renderSP
 
-        # Render the graph and capture state at initialization
+                # File Dialog button
+                if event.ui_element == buttonLoadGraph:
+                    print("Load Graph button clicked!")
+                    if file_dialog is None:
+                        file_dialog = UIFileDialog(
+                            rect=pygame.Rect(100, 100, 600, 400),
+                            manager=manager,
+                            window_title="Load a Graph File",
+                        )
+
+            #Logic which handles selecting from the available nodes
+            if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
+                if event.ui_element == sourceDropdown:
+                    sourceSelect = event.text
+                if event.ui_element == targetDropdown:
+                    targetSelect = event.text
+
+            if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED:
+                if file_dialog is not None and event.ui_element == file_dialog:
+                    print(f"File selected: {event.text}")
+                    try:
+                        with open(event.text, "r") as graph_file:
+                            graph_DOT = graph_file.read()
+
+                        # Call the visualization function
+                        #visualize(graph_DOT, f"{selectedSource}", f"{selectedTarget}")
+                        visualize(graph_DOT, f"{sourceSelect}", f"{targetSelect}")
+                    except Exception as e:
+                        print(f"Node {e} doesn't exist in submitted graph!")
+                    file_dialog = None  # Close the dialog after the selection
+
+        # Render the graph
         nodes, arrows = renderGraph(data, screen, font, screen, distances, source_node)
-        if renderSP:
-            render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances)
+
 
         render_snapshot()
         currentIndexSurface = font.render("current step: " + str(current_snapshot_index), False, 0xDDF2EB)
-        screen.blit(currentIndexSurface, (screen.get_width() / 2 - buttonPrev.width / 2, buttonPrev.y))
-        # Render the buttons
-        buttonPrev.render(screen)
-        buttonNext.render(screen)
-        buttonSP.render(screen)
+        screen.blit(currentIndexSurface, (screen.get_width() / 2 - 50, screen.get_height() - 50))
+        screen.blit(sourceLabel, (60,120))
+        screen.blit(targetLabel, (60, 170))
+        # Render UI
+        manager.update(time_delta)
+        manager.draw_ui(screen)
+
+        if renderSP:
+            render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances)
 
         pygame.display.flip()
         pygame.display.update()
