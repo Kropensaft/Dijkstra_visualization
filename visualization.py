@@ -1,7 +1,4 @@
 import os
-
-from networkx.classes import nodes
-
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from pygame.rect import Rect
@@ -10,6 +7,7 @@ from pygame.rect import Rect
 import math
 import numpy as np
 import networkx as nx
+
 # networkX ⬆
 
 from dijkstra import re
@@ -84,31 +82,6 @@ class Arrow(Object):
         mid_x, mid_y = (arrow_start_x + arrow_end_x) / 2, (arrow_start_y + arrow_end_y) / 2
         surface.blit(text,
                      ((mid_x + 5) - text.get_width() / 2, (mid_y + 5) - text.get_height() / 2))
-
-
-# class Button:
-#     def __init__(self, x, y, width, height, text, font, color, action=None):
-#         self.x = x
-#         self.y = y
-#         self.width = width
-#         self.height = height
-#         self.text = text
-#         self.font = font
-#         self.color = color
-#         self.action = action
-#
-#     def render(self, surface):
-#         # Draw the button
-#         pygame.draw.rect(surface, self.color, (self.x, self.y, self.width, self.height))
-#         # Draw the text on the button
-#         text_surf = self.font.render(self.text, False, (0xFFFFFF))
-#         surface.blit(text_surf, (
-#             self.x + (self.width - text_surf.get_width()) / 2, self.y + (self.height - text_surf.get_height()) / 2))
-#
-#     def is_clicked(self, pos):
-#         # Check if the button was clicked
-#         x, y = pos
-#         return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
 
 
 # Function to reParse the DOT graph input in order to visualize the graph
@@ -307,6 +280,9 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     screen = pygame.display.set_mode((1200, 800), pygame.SRCALPHA)
     _clock = pygame.time.Clock()
 
+    # Snapshot management
+    current_snapshot_index = 0
+
     sourceSelect, targetSelect = select_source, select_target
     nodesForSelection = []
     manager = pygame_gui.UIManager((1200, 800))
@@ -346,14 +322,26 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     #Dropdown menus to select source and target nodes
     sourceDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, sourceSelect, (10, 110, 50, 40), manager=manager)
     #source label
-    sourceLabel = font.render("Source Node", False, (150,151,151))
-
+    sourceLabel = pygame_gui.elements.UILabel(
+        relative_rect=Rect((60,110), (100, 40)),
+        text="Source Node",
+        manager=manager,
+    )
     targetDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, targetSelect,(10, 160, 50, 40), manager=manager)
     # target label
-    targetLabel = font.render("Target Node", False, (150,151,151))
+    targetLabel = pygame_gui.elements.UILabel(
+        relative_rect=Rect((60, 160), (100, 40)),
+        text="Target Node",
+        manager=manager,
+    )
 
-    # Snapshot management
-    current_snapshot_index = 0
+    currentIndexLabel = pygame_gui.elements.UILabel(
+        relative_rect=Rect(screen.get_width() / 2.3 - 15, screen.get_height() - 64, 200, 40),
+        manager=manager,
+        text=f"current step: {current_snapshot_index}"
+        )
+
+
 
     def render_snapshot(queue=None):
         if current_snapshot_index < len(steps):
@@ -386,8 +374,12 @@ def visualize(graph, source_node, target_node,select_source, select_target):
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 # Previous button
                 if event.ui_element == buttonPrev:
+                    if renderSP:
+                        renderSP = False
+
                     if current_snapshot_index != 0:
                         current_snapshot_index -= 1
+                        currentIndexLabel.set_text(text=f"current step: {current_snapshot_index}")
                         render_snapshot()
                         print("previous button clicked")
 
@@ -396,8 +388,9 @@ def visualize(graph, source_node, target_node,select_source, select_target):
 
                 # Next button
                 if event.ui_element == buttonNext:
-                    if current_snapshot_index < len(steps) - 1:
+                    if current_snapshot_index < len(steps):
                         current_snapshot_index += 1
+                        currentIndexLabel.set_text(text=f"current step: {current_snapshot_index}")
                         render_snapshot()
                         print("next button clicked")
 
@@ -446,10 +439,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
 
 
         render_snapshot()
-        currentIndexSurface = font.render("current step: " + str(current_snapshot_index), False, 0xDDF2EB)
-        screen.blit(currentIndexSurface, (screen.get_width() / 2 - 50, screen.get_height() - 50))
-        screen.blit(sourceLabel, (60,120))
-        screen.blit(targetLabel, (60, 170))
+
         # Render UI
         manager.update(time_delta)
         manager.draw_ui(screen)
