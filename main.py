@@ -49,7 +49,7 @@ def main():
              G -- G [weight=0]
            }
            """
-    visualize(graph_DOT, "B", "F")
+    visualize(graph_DOT, "B", "F","B", "F")
 
 
 if __name__ == '__main__':

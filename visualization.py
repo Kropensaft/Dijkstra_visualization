@@ -302,12 +302,12 @@ def create_gui_button(manager, text, x, y, width, height):
     )
 
 
-def visualize(graph, source_node, target_node):
+def visualize(graph, source_node, target_node,select_source, select_target):
     pygame.init()
     screen = pygame.display.set_mode((1200, 800), pygame.SRCALPHA)
     _clock = pygame.time.Clock()
 
-    sourceSelect, targetSelect = "A", "B"
+    sourceSelect, targetSelect = select_source, select_target
     nodesForSelection = []
     manager = pygame_gui.UIManager((1200, 800))
 
@@ -344,12 +344,12 @@ def visualize(graph, source_node, target_node):
                                         text="Load Graph")
 
     #Dropdown menus to select source and target nodes
-    sourceDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, sourceSelect, (10, 110, 50, 40))
-
+    sourceDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, sourceSelect, (10, 110, 50, 40), manager=manager)
     #source label
     sourceLabel = font.render("Source Node", False, (150,151,151))
 
-    targetDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, targetSelect, (10, 160, 50, 40))
+    targetDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, targetSelect,(10, 160, 50, 40), manager=manager)
+    # target label
     targetLabel = font.render("Target Node", False, (150,151,151))
 
     # Snapshot management
@@ -423,9 +423,11 @@ def visualize(graph, source_node, target_node):
             #Logic which handles selecting from the available nodes
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                 if event.ui_element == sourceDropdown:
-                    sourceSelect = event.text
+                    visualize(graph, f"{event.text}", f"{targetSelect}", f"{event.text}",
+                              f"{targetSelect}")
                 if event.ui_element == targetDropdown:
-                    targetSelect = event.text
+                    visualize(graph, f"{sourceSelect}", f"{event.text}", f"{sourceSelect}",
+                              f"{event.text}")
 
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED:
                 if file_dialog is not None and event.ui_element == file_dialog:
@@ -433,10 +435,8 @@ def visualize(graph, source_node, target_node):
                     try:
                         with open(event.text, "r") as graph_file:
                             graph_DOT = graph_file.read()
-
                         # Call the visualization function
-                        #visualize(graph_DOT, f"{selectedSource}", f"{selectedTarget}")
-                        visualize(graph_DOT, f"{sourceSelect}", f"{targetSelect}")
+                        visualize(graph_DOT, f"{sourceSelect}", f"{targetSelect}", sourceSelect, targetSelect)
                     except Exception as e:
                         print(f"Node {e} doesn't exist in submitted graph!")
                     file_dialog = None  # Close the dialog after the selection
