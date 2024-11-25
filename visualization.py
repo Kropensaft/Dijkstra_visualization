@@ -5,7 +5,6 @@ from pygame.rect import Rect
 # PyGame ⬆
 
 import math
-import numpy as np
 import networkx as nx
 
 # networkX ⬆
@@ -16,7 +15,7 @@ from dijkstra import Graph
 
 import pygame_gui
 from pygame_gui.windows.ui_file_dialog import UIFileDialog
-from pygame_gui.windows.ui_file_dialog import UIButton
+
 # UI elements and file systems ⬆
 
 class Object:
@@ -227,8 +226,8 @@ def render_shortest_path(data, graph, source, target, background_color, screen, 
     shortest_path_nodes = graph.shortest_path(source, target)
 
     if not shortest_path_nodes or len(shortest_path_nodes) == 1:
-        print(f"No path found from {source} to {target}.")
-        return
+        #Return 0 if there is no path
+        return 0
 
     # Construct edges for the shortest path
     shortest_path_edges = [
@@ -265,6 +264,7 @@ def render_shortest_path(data, graph, source, target, background_color, screen, 
         label = font.render(node.name, False, (255, 0, 0))
         screen.blit(label, (node.x + 10 - node.radius, node.y + 10 - node.radius * 1.5))
 
+    return 1
 
 # Function to create a Pygame_GUI button
 def create_gui_button(manager, text, x, y, width, height):
@@ -341,15 +341,38 @@ def visualize(graph, source_node, target_node,select_source, select_target):
         text=f"current step: {current_snapshot_index}"
         )
 
+    # Create a panel for the overlay
+    overlay_panel = pygame_gui.elements.UIPanel(
+        relative_rect=pygame.Rect((350, 250), (300, 120)),
+        manager=manager,
+        object_id="#overlay_panel"
+    )
 
+    # Create a label for the message on the overlay panel
+    message_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((40, 0), (220, 100)),
+        text=f"No path from node {sourceSelect} to node {targetSelect}",
+        manager=manager,
+        container=overlay_panel
+    )
+    # Create a label for the message on the overlay panel
+    continue_label = pygame_gui.elements.UILabel(
+        relative_rect=pygame.Rect((40, 30), (220, 100)),
+        text=f"Press any key to continue",
+        manager=manager,
+        container=overlay_panel
+    )
 
-    def render_snapshot(queue=None):
+    # Initially hide the overlay panel
+    overlay_panel.hide()
+    overlay_panel_on = False
+
+    def render_snapshot():
         if current_snapshot_index < len(steps):
             # Get the current step
             current_distances = steps[current_snapshot_index]
             # Update table values to reflect the current distances
             render_table(current_distances, nodes, screen, font, screen, 0xDDF2EB, 0x606d5d)
-            """TODO With each step color the node that is inserted into the visited queue and color its respective edges"""
 
 
     file_dialog = None
@@ -371,11 +394,18 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                     pygame.quit()
                     raise SystemExit(0)
 
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN and overlay_panel_on:
+                    overlay_panel.hide()
+                    renderSP = False
+                    select_source = "A"
+                    visualize(graph, source_node, target_node, select_source, select_target)
+
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 # Previous button
                 if event.ui_element == buttonPrev:
                     if renderSP:
                         renderSP = False
+                        overlay_panel.hide()
 
                     if current_snapshot_index != 0:
                         current_snapshot_index -= 1
@@ -445,7 +475,9 @@ def visualize(graph, source_node, target_node,select_source, select_target):
         manager.draw_ui(screen)
 
         if renderSP:
-            render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances)
+            if render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances) == 0:
+                overlay_panel.show()
+                overlay_panel_on = True
 
         pygame.display.flip()
         pygame.display.update()

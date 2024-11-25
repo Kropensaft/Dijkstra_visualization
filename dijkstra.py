@@ -88,9 +88,7 @@ class Graph:
         # Backtrack from the target node using the predecessors dictionary
         counter = 0
         while current_node:
-            if counter > len(predecessors):
-                print("Node has no outgoing edges")
-                return None
+            if counter > len(predecessors): return None
             path.append(current_node)  # Add the current node to the path
             current_node = predecessors[current_node]  # Move to the predecessor node
             counter += 1
