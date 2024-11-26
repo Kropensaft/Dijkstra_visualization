@@ -1,12 +1,12 @@
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+#os.environ... used to hide initial pygame console welcome message
 import pygame
 from pygame.rect import Rect
 # PyGame ⬆
 
 import math
 import networkx as nx
-
 # networkX ⬆
 
 from dijkstra import re
@@ -19,16 +19,10 @@ from pygame_gui.windows.ui_file_dialog import UIFileDialog
 # UI elements and file systems ⬆
 
 class Object:
-    def __init__(self, x, y, name, type='node', color=None, text=None, textPos=None, font="Arial", radius=None,
-                 center=None, weight=None, visited=False):
-        self.visited = visited
-        self.textPos_x, self.textPos_y = textPos if textPos else (x, y)
+    def __init__(self, x, y, name, type='node', radius=None, center=None, weight=None):
         self.radius = radius
         self.center_x, self.center_y = center if center else (x, y)
         self.type = type
-        self.font = font
-        self.text = text
-        self.color = color
         self.name = name
         self.x = x
         self.y = y
@@ -38,7 +32,7 @@ class Object:
 class Arrow(Object):
     def __init__(self, start_node, end_node, weight, start_pos, end_pos, name="", color=(255, 255, 255)):
         super().__init__(x=(start_pos[0] + end_pos[0]) / 2, y=(start_pos[1] + end_pos[1]) / 2, name=name, type='edge',
-                         weight=weight, color=(0, 0, 0))
+                         weight=weight)
         self.start_node = start_node
         self.color = color
         self.end_node = end_node
@@ -129,9 +123,6 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
             nodes.add(B)
             edges.append((A, B, weight))
 
-    # Assign positions for all nodes
-    # assign_positions(nodes, radius, center_x, center_y)
-
     # Create node objects
     node_objects = {
         node: Object(
@@ -140,9 +131,6 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
             name=node,
             type='node',
             radius=13,
-            font=font,
-            text=str(distances.get(node, '\N{INFINITY}')),  # Use distances as text
-            textPos=(node_positions[node][0] + 20, node_positions[node][1] - 10)  # Offset text for readability
         )
         for node in nodes
     }
@@ -156,7 +144,6 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
             start_pos=node_positions[nodeA],
             end_pos=node_positions[nodeB],
             name=f"{nodeA}-{nodeB}"
-
         )
         for nodeA, nodeB, weight in edges
     ]
@@ -319,16 +306,14 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     buttonLoadGraph = create_gui_button(manager=manager, x=10, y=60, width=100, height=40,
                                         text="Load Graph")
 
-    #Dropdown menus to select source and target nodes
+    #Dropdown menus to select source and target nodes and their respective labels
     sourceDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, sourceSelect, (10, 110, 50, 40), manager=manager)
-    #source label
     sourceLabel = pygame_gui.elements.UILabel(
         relative_rect=Rect((60,110), (100, 40)),
         text="Source Node",
         manager=manager,
     )
     targetDropdown = pygame_gui.elements.UIDropDownMenu(nodesForSelection, targetSelect,(10, 160, 50, 40), manager=manager)
-    # target label
     targetLabel = pygame_gui.elements.UILabel(
         relative_rect=Rect((60, 160), (100, 40)),
         text="Target Node",
@@ -355,6 +340,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
         manager=manager,
         container=overlay_panel
     )
+
     # Create a label for the message on the overlay panel
     continue_label = pygame_gui.elements.UILabel(
         relative_rect=pygame.Rect((40, 30), (220, 100)),
@@ -367,6 +353,8 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     overlay_panel.hide()
     overlay_panel_on = False
 
+
+    #Function which renders the data in the upcoming step into the table
     def render_snapshot():
         if current_snapshot_index < len(steps):
             # Get the current step
@@ -416,6 +404,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                     if current_snapshot_index == 0:
                         print("no more previous events")
 
+
                 # Next button
                 if event.ui_element == buttonNext:
                     if current_snapshot_index < len(steps):
@@ -443,7 +432,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                             window_title="Load a Graph File",
                         )
 
-            #Logic which handles selecting from the available nodes
+            #Logic which handles selecting source and target from the available nodes
             if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
                 if event.ui_element == sourceDropdown:
                     visualize(graph, f"{event.text}", f"{targetSelect}", f"{event.text}",
@@ -467,18 +456,21 @@ def visualize(graph, source_node, target_node,select_source, select_target):
         # Render the graph
         nodes, arrows = renderGraph(data, screen, font, screen, distances, source_node)
 
-
+        # Render default step of the algorithm
         render_snapshot()
 
-        # Render UI
+        # Render pygame_GUI
         manager.update(time_delta)
         manager.draw_ui(screen)
 
+        # Check whether to render the Shortest path
         if renderSP:
             if render_shortest_path(data, g, source_node, target_node, 0x606d5d, screen, font, distances) == 0:
                 overlay_panel.show()
                 overlay_panel_on = True
 
+
+        #Core pygame functions for rendering anything
         pygame.display.flip()
         pygame.display.update()
         _clock.tick(60)
