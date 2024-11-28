@@ -41,6 +41,8 @@ class Graph:
         heapify(priority_queue)  # Heapify the priority queue to make it a valid min-heap
         visited = set()  # Set to track visited nodes
 
+        predecessors = {node: None for node in self.graph}  # Initialize predecessors
+
         # While the priority queue is not empty
         while priority_queue:
             currentDist, currentNode = heappop(priority_queue)  # Pop the node with the smallest distance
@@ -67,32 +69,29 @@ class Graph:
                     # Push the neighbor into the priority queue with the updated distance
                     heappush(priority_queue, (temporary_distance, neighbor))
 
-        # Initialize a dictionary to store the predecessors for each node
-        predecessors = {node: None for node in self.graph}
-        # For each node and its corresponding distance
-        for node, distance in distances.items():
-            # Check the neighbors of the node to find the predecessor
-            for neighbor, weight in self.graph[node].items():
-                # If the neighbor's distance equals the current node's distance plus the edge weight
-                if distances[neighbor] == distance + weight:
-                    predecessors[neighbor] = node  # Set the predecessor
+                    # Update the predecessor
+                    predecessors[neighbor] = currentNode
 
         return distances, predecessors, steps  # Return both the distances and the predecessors
 
     def shortest_path(self, source: str, target: str):
         # Call dijkstra to get distances and predecessors from the source node
-        _, predecessors, _ = self.dijkstra(source, target)
+        distances, predecessors, _ = self.dijkstra(source, target)
+
+        # If the target is unreachable, return an empty path
+        if distances[target] == float('inf'):
+            return []
+
         path = []  # Initialize an empty list to store the path
         current_node = target  # Start from the target node
 
         # Backtrack from the target node using the predecessors dictionary
-        counter = 0
         while current_node:
-            if counter > len(predecessors): return None
             path.append(current_node)  # Add the current node to the path
             current_node = predecessors[current_node]  # Move to the predecessor node
-            counter += 1
+            if current_node == source:
+                path.append(source)  # Add the source node and end the loop
+                break
 
         path.reverse()  # Reverse the path to get it from source to target
-
         return path  # Return the reversed path
