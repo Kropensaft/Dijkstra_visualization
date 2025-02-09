@@ -1,4 +1,5 @@
 import os
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 #os.environ... used to hide initial pygame console welcome message
 import pygame
@@ -63,7 +64,7 @@ class Arrow(Object):
         arrow_x2 = arrow_end_x - self.arrow_size * math.cos(angle + math.pi / 6)
         arrow_y2 = arrow_end_y - self.arrow_size * math.sin(angle + math.pi / 6)
 
-        pygame.draw.polygon(surface, (color),
+        pygame.draw.polygon(surface, color,
                             [(arrow_end_x, arrow_end_y), (arrow_x1, arrow_y1), (arrow_x2, arrow_y2)])
 
         # Render and rotate the text to match the angle of the arrow
@@ -293,6 +294,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     # Get distances using the Dijkstra algorithm
     distances, _, steps = g.dijkstra(source_node, target_node)
     screenWidth, screenHeight = screen.get_width(), screen.get_height()
+    #region UI_INIT
 
     buttonPrev = create_gui_button(manager=manager, x=100, y=screenHeight - 60, width=100, height=40,
                                    text="Previous Step")
@@ -343,11 +345,14 @@ def visualize(graph, source_node, target_node,select_source, select_target):
 
     # Create a label for the message on the overlay panel
     continue_label = pygame_gui.elements.UILabel(
-        relative_rect=pygame.Rect((40, 30), (220, 100)),
+        relative_rect=pygame.Rect((40, 30), (220, 50)),
         text=f"Press any key to continue",
         manager=manager,
         container=overlay_panel
     )
+
+    #endregion
+
 
     # Initially hide the overlay panel
     overlay_panel.hide()
@@ -366,8 +371,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
     file_dialog = None
     renderSP = False
 
-
-
+    #region Main_Loop
     # Event loop for visualization
     while True:
         time_delta = _clock.tick(60) / 1000.0
@@ -400,9 +404,11 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                         currentIndexLabel.set_text(text=f"current step: {current_snapshot_index}")
                         render_snapshot()
                         print("previous button clicked")
+                        buttonNext.enable()
 
                     if current_snapshot_index == 0:
                         print("no more previous events")
+                        buttonPrev.disable()
 
 
                 # Next button
@@ -411,11 +417,17 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                         current_snapshot_index += 1
                         currentIndexLabel.set_text(text=f"current step: {current_snapshot_index}")
                         render_snapshot()
+                        buttonPrev.enable()
                         print("next button clicked")
 
                     if current_snapshot_index == len(steps) - 1:
                         print("no more upcoming events")
                         renderSP = not renderSP
+                        buttonNext.disable()
+
+
+
+
 
                 # Shortest path button
                 if event.ui_element == buttonSP:
@@ -470,7 +482,9 @@ def visualize(graph, source_node, target_node,select_source, select_target):
                 overlay_panel_on = True
 
 
+
         #Core pygame functions for rendering anything
         pygame.display.flip()
         pygame.display.update()
         _clock.tick(60)
+    #endregion
