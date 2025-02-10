@@ -95,7 +95,6 @@ B -- C [weight=1];
 B -- D [weight=5];
 C -- D [weight=8];
 }
-"""
 ```
 
 ---
