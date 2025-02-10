@@ -88,12 +88,13 @@ node3 -- node1 [weight=7];
 
 #### Example Graph
 ```python
-dot_string = """
+graph G = {
 A -- B [weight=4];
 A -- C [weight=2];
 B -- C [weight=1];
 B -- D [weight=5];
 C -- D [weight=8];
+}
 """
 ```
 
