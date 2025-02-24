@@ -22,16 +22,16 @@ fi
 install_deps() {
     case "$OS" in
         ubuntu|debian)
-            sudo apt update && sudo apt install -y "${DEPS[@]}"
+            sudo apt update && sudo apt install -y python3 && python3 -m pip install "${DEPS[@]}"
             ;;
         fedora)
-            sudo dnf install -y "${DEPS[@]}"
+            sudo dnf install -y python3 && python3 -m pip install "${DEPS[@]}"
             ;;
         centos|rhel)
-            sudo yum install -y "${DEPS[@]}"
+            sudo yum install -y python3 && python3 -m pip install "${DEPS[@]}"
             ;;
         macOS)
-            brew install "${DEPS[@]}"
+            python3 -m pip install "${DEPS[@]}"
             ;;
         windows)
             python -m pip install "${DEPS[@]}"
