@@ -29,13 +29,17 @@ This program visualizes a graph, allows users to find and highlight the shortest
 
 - Python 3.8 or later
 - Libraries:
-  - `pygame`: For graphical rendering.
-  - `heapq`: For Dijkstra's algorithm priority queue.
-  - `re`: For parsing DOT format input.
-
-Install Pygame:
+  - `python3` Language support 
+  - `pygame`  Main rendering engine
+  - `pygame_gui` GUI elements
+  - `networkx` Node placement and orientation
+Install dependecies using the included bash script. The script isnt OS specific and recognizes and adjusts based on your running OS:
 ```bash
-pip install pygame
+./dependecies
+```
+or 
+```bash
+sudo ./dependencies
 ```
 
 ---
@@ -72,7 +76,7 @@ pip install pygame
 
 3. Run the program:
    ```bash
-   python main.py
+   python3 main.py
    ```
 
 ---
@@ -151,4 +155,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ## Author
 
-Developed by [Vojtěch Vlachovský].
+Developed by Vojtěch Vlachovský as a part of the mandatory curriculum project.
