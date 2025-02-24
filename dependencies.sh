@@ -14,46 +14,54 @@ elif [[ -f /etc/redhat-release ]]; then
 elif [[ "$(uname -o)" == "Msys" || "$(uname -o)" == "Cygwin" ]]; then
     OS="windows"
 else
-    echo "Unsupported OS"
+    echo -e "Unsupported OS"
     exit 1
 fi
 
 # Function to check if Python is installed
 check_python() {
     if which python3 > /dev/null 2>&1; then
-        echo "Python is already installed."
         return 0
     else
-        echo "Python is not installed."
+        echo -e "Python is not installed."
         return 1
     fi
 }
 
+check_pip(){
+    if which pip > /dev/null 2>&1; then
+        echo -e "Pip already installed, skipping instalation."
+        return 0
+    else 
+        echo -e "Pip not installed!"
+        return 1
+    fi
+}
 # Function to install Python
 install_python() {
     case "$OS" in
         ubuntu|debian)
-            echo "Installing Python on Ubuntu/Debian..."
+            echo -e "Installing Python on Ubuntu/Debian..."
             sudo apt update && sudo apt install -y python3
             ;;
         fedora)
-            echo "Installing Python on Fedora..."
+            echo -e "Installing Python on Fedora..."
             sudo dnf install -y python3
             ;;
         centos|rhel)
-            echo "Installing Python on CentOS/RHEL..."
+            echo -e "Installing Python on CentOS/RHEL..."
             sudo yum install -y python3
             ;;
         macOS)
-            echo "Installing Python on macOS..."
+            echo -e "Installing Python on macOS..."
             brew install python3
             ;;
         windows)
-            echo "Installing Python on Windows..."
+            echo -e "Installing Python on Windows..."
             winget install python3
             ;;
         *)
-            echo "Unsupported OS for Python installation."
+            echo -e "Unsupported OS for Python installation."
             exit 1
             ;;
     esac
@@ -61,34 +69,40 @@ install_python() {
 
 # Function to install dependencies
 install_deps() {
-    echo "Installing dependencies..."
-    python3 -m pip install "${DEPS[@]}"
+    echo -e "Installing dependencies..."
+
+    if [[ "$(uname -o)" == "Msys" || "$(uname -o)" == "Cygwin" ]]; then
+    pip install "${DEPS[@]}"
+    else
+    python3 -m install "${DEPS[@]}"
+    fi
+
 }
 
 install_pip(){
     case "$OS" in
         ubuntu|debian)
-            echo "Installing pip on Ubuntu/Debian..."
+            echo -e "Installing pip on Ubuntu/Debian..."
             sudo apt update && sudo apt install -y python3-pip
             ;;
         fedora)
-            echo "Installing pip on Fedora..."
+            echo -e "Installing pip on Fedora..."
             sudo dnf install -y python3-pip
             ;;
         centos|rhel)
-            echo "Installing pip on CentOS/RHEL..."
+            echo -e "Installing pip on CentOS/RHEL..."
             sudo yum install -y python3-pip
             ;;
         macOS)
-            echo "Installing pip on macOS..."
+            echo -e "Installing pip on macOS..."
             brew install python3-pip
             ;;
         windows)
-            echo "Installing pip on Windows..."
+            echo -e "Installing pip on Windows..."
             winget install python3-pip
             ;;
         *)
-            echo "Unsupported OS for pip installation."
+            echo -e "Unsupported OS for pip installation."
             exit 1
             ;;
     esac
@@ -101,9 +115,16 @@ fi
 
 # Verify Python installation again
 if check_python; then
-    install_pip
-    install_deps
+    if ! check_pip; then
+        echo -e "Python already installed."
+        install_pip
+    else
+        install_deps
+    fi
+
+    echo -e ""
+    read -p "Press any button to close the window"
 else
-    echo "Failed to install Python. Exiting."
+    echo -e -e "Failed to install Python. Exiting."
     exit 1
 fi
