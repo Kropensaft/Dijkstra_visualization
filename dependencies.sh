@@ -101,6 +101,7 @@ fi
 
 # Verify Python installation again
 if check_python; then
+    install_pip
     install_deps
 else
     echo "Failed to install Python. Exiting."
