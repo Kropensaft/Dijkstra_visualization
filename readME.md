@@ -36,12 +36,17 @@ This program visualizes a graph, allows users to find and highlight the shortest
 
 ### Dependecies
 Install dependecies using the included bash script. The script isnt OS specific and recognizes and adjusts based on your running OS:
+
+- OS: Windows
 ```bash
-./dependecies
+dependecies.sh
 ```
 or 
+
+- OS: Darwin, Linux
 ```bash
-sudo ./dependencies
+chmod +x dependencies.sh
+./dependencies.sh
 ```
 
 ---
