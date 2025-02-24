@@ -36,7 +36,7 @@ This program visualizes a graph, allows users to find and highlight the shortest
 
 ### Dependecies
 Install dependecies using the included bash script. The script isnt OS specific and recognizes and adjusts based on your running OS:
-
+**Depending on your OS you may need to set up permisions after cloning!**
 - OS: Windows
 ```bash
 dependecies.sh
@@ -45,7 +45,7 @@ or
 
 - OS: Darwin, Linux
 ```bash
-chmod +x dependencies.sh
+chmod 577 dependencies.sh
 ./dependencies.sh
 ```
 
