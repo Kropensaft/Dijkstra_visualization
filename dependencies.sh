@@ -65,6 +65,35 @@ install_deps() {
     python3 -m pip install "${DEPS[@]}"
 }
 
+install_pip(){
+    case "$OS" in
+        ubuntu|debian)
+            echo "Installing pip on Ubuntu/Debian..."
+            sudo apt update && sudo apt install -y python3-pip
+            ;;
+        fedora)
+            echo "Installing pip on Fedora..."
+            sudo dnf install -y python3-pip
+            ;;
+        centos|rhel)
+            echo "Installing pip on CentOS/RHEL..."
+            sudo yum install -y python3-pip
+            ;;
+        macOS)
+            echo "Installing pip on macOS..."
+            brew install python3-pip
+            ;;
+        windows)
+            echo "Installing pip on Windows..."
+            winget install python3-pip
+            ;;
+        *)
+            echo "Unsupported OS for pip installation."
+            exit 1
+            ;;
+    esac
+}
+
 # Main script logic
 if ! check_python; then
     install_python
