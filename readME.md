@@ -33,6 +33,8 @@ This program visualizes a graph, allows users to find and highlight the shortest
   - `pygame`  Main rendering engine
   - `pygame_gui` GUI elements
   - `networkx` Node placement and orientation
+
+### Dependecies
 Install dependecies using the included bash script. The script isnt OS specific and recognizes and adjusts based on your running OS:
 ```bash
 ./dependecies
