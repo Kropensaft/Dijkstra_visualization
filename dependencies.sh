@@ -34,7 +34,8 @@ install_deps() {
             python3 -m pip install "${DEPS[@]}"
             ;;
         windows)
-            python -m pip install "${DEPS[@]}"
+            winget install python3
+            pip install "${DEPS[@]}"
             ;;
         *)
             echo "Unsupported OS"
