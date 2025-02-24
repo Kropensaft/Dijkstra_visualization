@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List of dependencies
-DEPS=(pygame pygame_gui networkx python3)
+DEPS=(pygame pygame_gui networkx)
 
 # Detect OS
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -18,31 +18,62 @@ else
     exit 1
 fi
 
-# Install dependencies based on OS
-install_deps() {
+# Function to check if Python is installed
+check_python() {
+    if which python3 > /dev/null 2>&1; then
+        echo "Python is already installed."
+        return 0
+    else
+        echo "Python is not installed."
+        return 1
+    fi
+}
+
+# Function to install Python
+install_python() {
     case "$OS" in
         ubuntu|debian)
-            sudo apt update && sudo apt install -y python3 && python3 -m pip install "${DEPS[@]}"
+            echo "Installing Python on Ubuntu/Debian..."
+            sudo apt update && sudo apt install -y python3
             ;;
         fedora)
-            sudo dnf install -y python3 && python3 -m pip install "${DEPS[@]}"
+            echo "Installing Python on Fedora..."
+            sudo dnf install -y python3
             ;;
         centos|rhel)
-            sudo yum install -y python3 && python3 -m pip install "${DEPS[@]}"
+            echo "Installing Python on CentOS/RHEL..."
+            sudo yum install -y python3
             ;;
         macOS)
-            python3 -m pip install "${DEPS[@]}"
+            echo "Installing Python on macOS..."
+            brew install python3
             ;;
         windows)
+            echo "Installing Python on Windows..."
             winget install python3
-            pip install "${DEPS[@]}"
             ;;
         *)
-            echo "Unsupported OS"
+            echo "Unsupported OS for Python installation."
             exit 1
             ;;
     esac
 }
 
-# Run installation
-install_deps
+# Function to install dependencies
+install_deps() {
+    echo "Installing dependencies..."
+    python3 -m pip install "${DEPS[@]}"
+}
+
+# Main script logic
+if ! check_python; then
+    install_python
+fi
+
+# Verify Python installation again
+if check_python; then
+    install_deps
+else
+    echo "Failed to install Python. Exiting."
+    exit 1
+fi
