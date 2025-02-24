@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# List of dependencies
+DEPS=(pygame pygame_gui networkx python3)
+
+# Detect OS
+if [[ "$(uname)" == "Darwin" ]]; then
+    OS="macOS"
+elif [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    OS=$ID
+elif [[ -f /etc/redhat-release ]]; then
+    OS="rhel"
+elif [[ "$(uname -o)" == "Msys" || "$(uname -o)" == "Cygwin" ]]; then
+    OS="windows"
+else
+    echo "Unsupported OS"
+    exit 1
+fi
+
+# Install dependencies based on OS
+install_deps() {
+    case "$OS" in
+        ubuntu|debian)
+            sudo apt update && sudo apt install -y "${DEPS[@]}"
+            ;;
+        fedora)
+            sudo dnf install -y "${DEPS[@]}"
+            ;;
+        centos|rhel)
+            sudo yum install -y "${DEPS[@]}"
+            ;;
+        macOS)
+            brew install "${DEPS[@]}"
+            ;;
+        windows)
+            python -m pip install "${DEPS[@]}"
+            ;;
+        *)
+            echo "Unsupported OS"
+            exit 1
+            ;;
+    esac
+}
+
+# Run installation
+install_deps
