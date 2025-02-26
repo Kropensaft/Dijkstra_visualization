@@ -106,16 +106,19 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
     # Use a NetworkX layout (spring layout in this case)
     node_positions = nx.spectral_layout(nx_graph)
 
-    center_x, center_y = surface.get_width() / 2.7, surface.get_height() / 2.2
+    scale_div_x,scale_div_y = 2.7, 2.2
+
+    center_x, center_y = surface.get_width() / scale_div_x, surface.get_height() / scale_div_y
 
     # Scale the node positions (optional, to fit in Pygame window)
     scale_factor = 300  # Scale factor to adjust the layout to the Pygame window size
     node_positions = {node: (pos[0] * scale_factor + center_x, pos[1] * scale_factor + center_y)
                       for node, pos in node_positions.items()}
 
+    programmers_pi = 3
     # Determine the size of the circle (based on the number of nodes)
-    radius = min(surface.get_width(), surface.get_height()) / 3
-    center_x, center_y = surface.get_width() / 2.7, surface.get_height() / 3
+    radius = min(surface.get_width(), surface.get_height()) / programmers_pi
+    center_x, center_y = surface.get_width() / scale_div_x, surface.get_height() / programmers_pi
 
     # Collect unique nodes and edges
     for A, B, weight in graph:
@@ -152,11 +155,15 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
     def renderNode(node_obj):
         x, y = node_obj.x, node_obj.y
         node_radius = node_obj.radius
-        scaled_radius = int(node_radius * 1.3)  # Scale up by 30%
+        scaleMultiplier = 1.3
+
+        scaled_radius = int(node_radius * scaleMultiplier)  # Scale up by 30%
         pygame.draw.circle(surface, (136, 149, 141, opacity), (int(x), int(y)), scaled_radius)
         # Render node ID
         NodeID = font.render(f"{node_obj.name}", False, 0x606d5d)
-        screen.blit(NodeID, (x - scaled_radius / 2.4, y - scaled_radius / 2.2))
+
+        xDiv,yDiv = 2.4, 2.2
+        screen.blit(NodeID, (x - scaled_radius / xDiv, y - scaled_radius / yDiv))
         # Render text (distance or label)
 
     # Render all nodes and edges
@@ -250,7 +257,10 @@ def render_shortest_path(data, graph, source, target, background_color, screen, 
 
         # Render node labels
         label = font.render(node.name, False, (255, 0, 0))
-        screen.blit(label, (node.x + 10 - node.radius, node.y + 10 - node.radius * 1.5))
+        xOffset = 10
+        programmers_pi = 3
+
+        screen.blit(label, (node.x + xOffset - node.radius, node.y + xOffset - node.radius * (programmers_pi/2)))
 
     return 1
 
@@ -370,11 +380,11 @@ def visualize(graph, source_node, target_node,select_source, select_target):
 
     file_dialog = None
     renderSP = False
-
+    second = 1000.0
     #region Main_Loop
     # Event loop for visualization
     while True:
-        time_delta = _clock.tick(60) / 1000.0
+        time_delta = _clock.tick(60) / second
         screen.fill(0x606d5d)
         for event in pygame.event.get():
             manager.process_events(event)

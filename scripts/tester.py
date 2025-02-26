@@ -1,4 +1,4 @@
-from scripts.dijkstra import Graph
+from dijkstra import Graph
 import unittest
 
 class TestShortestPath(unittest.TestCase):
@@ -51,4 +51,4 @@ class TestShortestPath(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
