@@ -106,19 +106,19 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
     # Use a NetworkX layout (spring layout in this case)
     node_positions = nx.spectral_layout(nx_graph)
 
-    scale_div_x,scale_div_y = 2.7, 2.2
+    global SCALE_DIV_X,SCALE_DIV_Y = 2.7, 2.2
 
-    center_x, center_y = surface.get_width() / scale_div_x, surface.get_height() / scale_div_y
+    center_x, center_y = surface.get_width() / SCALE_DIV_X, surface.get_height() / SCALE_DIV_Y
 
     # Scale the node positions (optional, to fit in Pygame window)
-    scale_factor = 300  # Scale factor to adjust the layout to the Pygame window size
-    node_positions = {node: (pos[0] * scale_factor + center_x, pos[1] * scale_factor + center_y)
+    global SCALE_FACTOR = 300  # Scale factor to adjust the layout to the Pygame window size
+    node_positions = {node: (pos[0] * SCALE_FACTOR + center_x, pos[1] * SCALE_FACTOR + center_y)
                       for node, pos in node_positions.items()}
 
-    programmers_pi = 3
+    global PROGRAMMERS_PI = 3
     # Determine the size of the circle (based on the number of nodes)
-    radius = min(surface.get_width(), surface.get_height()) / programmers_pi
-    center_x, center_y = surface.get_width() / scale_div_x, surface.get_height() / programmers_pi
+    radius = min(surface.get_width(), surface.get_height()) / PROGRAMMERS_PI
+    center_x, center_y = surface.get_width() / scale_div_x, surface.get_height() / PROGRAMMERS_PI
 
     # Collect unique nodes and edges
     for A, B, weight in graph:
@@ -155,15 +155,15 @@ def renderGraph(graph, surface, font, screen, distances, source_node, opacity=25
     def renderNode(node_obj):
         x, y = node_obj.x, node_obj.y
         node_radius = node_obj.radius
-        scaleMultiplier = 1.3
+        global SCALE_MULTIPLIER = 1.3
 
-        scaled_radius = int(node_radius * scaleMultiplier)  # Scale up by 30%
+        scaled_radius = int(node_radius * SCALE_MULTIPLIER)  # Scale up by 30%
         pygame.draw.circle(surface, (136, 149, 141, opacity), (int(x), int(y)), scaled_radius)
         # Render node ID
         NodeID = font.render(f"{node_obj.name}", False, 0x606d5d)
 
-        xDiv,yDiv = 2.4, 2.2
-        screen.blit(NodeID, (x - scaled_radius / xDiv, y - scaled_radius / yDiv))
+        global X_DIV,Y_DIV = 2.4, 2.2
+        screen.blit(NodeID, (x - scaled_radius / X_DIV, y - scaled_radius / Y_DIV))
         # Render text (distance or label)
 
     # Render all nodes and edges
