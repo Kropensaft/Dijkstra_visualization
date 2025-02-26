@@ -105,6 +105,7 @@ A -- C [weight=2];
 B -- C [weight=1];
 B -- D [weight=5];
 C -- D [weight=8];
+D -- D [weight=0]; #In case you intend to create a node without outgoing edges, declare it like so.
 }
 ```
 
