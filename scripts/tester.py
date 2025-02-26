@@ -1,4 +1,4 @@
-from dijkstra import Graph
+from scripts.dijkstra import Graph
 import unittest
 
 class TestShortestPath(unittest.TestCase):

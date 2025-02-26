@@ -337,7 +337,7 @@ def visualize(graph, source_node, target_node,select_source, select_target):
 
     # Create a label for the message on the overlay panel
     message_label = pygame_gui.elements.UILabel(
-        relative_rect=pygame.Rect((40, 0), (220, 100)),
+        relative_rect=pygame.Rect((40, -20), (220, 100)),
         text=f"No path from node {sourceSelect} to node {targetSelect}",
         manager=manager,
         container=overlay_panel

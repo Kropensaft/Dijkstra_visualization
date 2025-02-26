@@ -74,7 +74,7 @@ install_deps() {
     if [[ "$(uname -o)" == "Msys" || "$(uname -o)" == "Cygwin" ]]; then
     pip install "${DEPS[@]}"
     else
-    python3 -m install "${DEPS[@]}"
+    python3 -m pip install "${DEPS[@]}"
     fi
 
 }
